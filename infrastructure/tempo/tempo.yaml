@@ -1,0 +1,30 @@
+server:
+  #HTTP-сервер
+  #Служебный HTTP (здоровье/метрики "/metrics", статусы)
+  http_listen_port: 3200
+
+#Принимает трейсы по OTLP: gRPC 4317, HTTP 4318 (стандартные порты по умолчанию)
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+        http:
+
+#trace_idle_period: 10s - если трейс не дополняется 10с, буфер закрывается и пишется на диск
+#(ускоряет видимость трейсов и снижает память)
+ingester:
+  trace_idle_period: 10s
+
+#compacted_block_retention: 48h - хранить скомпактированные блоки 48 часов (управление объёмом и скоростью чтения)
+compactor:
+  compaction:
+    compacted_block_retention: 48h
+
+#storage.trace.backend: local - локальное файловое хранилище
+#local.path: /var/tempo/traces - каталог для сегментов/блоков трейсов
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/traces

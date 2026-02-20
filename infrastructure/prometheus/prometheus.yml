@@ -1,0 +1,69 @@
+#Глобальные интервалы
+#scrape_interval: 15s - как часто опрашивать цели
+#scrape_timeout: 10s - сколько ждать ответ
+#evaluation_interval: 15s - как часто пересчитывать правила (recording/alerting)
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+#Модель обнаружения целей
+#Везде используется static_configs (жёстко заданные адреса) без автообнаружения
+#Имена в "targets" - это имена сервисов в Docker-сети (резолвятся через Docker DNS)
+
+#Prometheus - сам себя: prometheus:9090 (здоровье и внутренние метрики Prometheus)
+#api и persons-api - Spring Boot: ".../actuator/prometheus" на портах 8091 и 8092
+
+#"keycloak" -> "/metrics" нa "keycloak:9000"
+#"grafana" -> "/metrics" нa "grafana:3000"
+#"alloy" -> "/metrics" нa "alloy:9080"
+#"loki" -> "/metrics" нa "loki:3100"
+#"tempo" -> "/metrics" нa "tempo:3200"
+#"person-postgres", "keycloak-postgres" -> ":9187" (Prometheus postgres-exporter; БД не скрапится напрямую).
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [ "prometheus:9090" ]
+
+  - job_name: api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'api:8091' ]
+
+  - job_name: persons-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'persons-api:8092' ]
+
+  - job_name: keycloak
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ 'keycloak:9000' ]
+
+  - job_name: grafana
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ 'grafana:3000' ]
+
+  - job_name: alloy
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ 'alloy:9080' ]
+
+  - job_name: loki
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ 'loki:3100' ]
+
+  - job_name: tempo
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ 'tempo:3200' ]
+
+  - job_name: person-postgres
+    static_configs:
+      - targets: [ 'person-postgres-exporter:9187' ]
+
+  - job_name: keycloak-postgres
+    static_configs:
+      - targets: [ 'keycloak-postgres-exporter:9187' ]
