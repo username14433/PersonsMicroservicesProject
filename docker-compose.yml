@@ -188,6 +188,48 @@ services:
 
 
   #persons-api
+  # Описываем в docker compose запуск сервиса persons-api на основе созданного ранее Dockerfile
+  # Это job container он: запускается -> делает работу (публикует артефакты) -> завершается
+  persons-api:
+    build:
+      context: ./person-service_
+      dockerfile: Dockerfile
+    container_name: persons-api
+    ports:
+      - "8092:8092"
+    working_dir: /app
+    environment:
+      POSTGRES_HOST: person-postgres
+      POSTGRES_PORT: 5432
+      SPRING_PROFILES_ACTIVE: docker
+      OTLP_EXPORTER_ENDPOINT: http://tempo:4318
+    depends_on:
+      # Чтобы сервис persons-api запускался только после успешного запуска контейнера Nexus
+      persons-api-publisher:
+        condition: service_completed_successfully
+      person-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-i", "http://localhost:8092/actuator/health" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Добавляем отдельный сервис, который публикует артефакты в Nexus, только после того как контейнер самого Nexus запустится
+  persons-api-publisher:
+    image: gradle:8.14.2-jdk24
+    container_name: persons-api-publisher
+    working_dir: /home/gradle/project
+    volumes:
+      - ./person-service_:/home/gradle/project
+    environment:
+      NEXUS_URL: http://nexus:8081/repository/maven-snapshots
+      NEXUS_USERNAME: admin
+      NEXUS_PASSWORD: admin
+    depends_on:
+      nexus:
+        condition: service_healthy
+    command: [ "gradle", "publish", "--info" ]
   # api
 
 
