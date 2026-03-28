@@ -230,7 +230,29 @@ services:
       nexus:
         condition: service_healthy
     command: [ "gradle", "publish", "--info" ]
+
   # api
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: api
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      SPRING_PROFILES_ACTIVE: docker
+      PERSONS_API_HOST: persons-api
+      PERSONS_API_URL: http://persons-api:8092
+      OTLP_EXPORTER_ENDPOINT: http://tempo:4318
+    ports:
+      - "8091:8091"
+    depends_on:
+      persons-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-fsS http://localhost:8091/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
 
 volumes:
